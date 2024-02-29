@@ -1,43 +1,219 @@
 import socket, threading
 from crewai import Crew, Process, Agent, Task
 from langchain_google_genai import ChatGoogleGenerativeAI
+from customtkinter import *
+from tkinter import *
+import customtkinter
+from textwrap import *
+import time
 
-client_ip = '127.0.0.1'
-client_port = 999 
+languages = ['None','Python','Java','MySQl','Javascript']
+row = 0
+server_row = 0
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((client_ip,client_port))
+root = CTk()
+root.title("Developer")
+root.geometry("1650x500")
+customtkinter.set_appearance_mode("dark")
+customtkinter.set_default_color_theme("green")
 
-client_socket.send("DEVELOPER".encode())
+llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyA3HpbYVmRiLl4SkthICYI_x_9lGfoseyc")
+developer = Agent(role="Software Developer",goal="",backstory="You are developer who can code in any technology and create the best logics and error free code", llm=llm, allow_delegation=True,verbose=True)
+tester = Agent(role="Software Tester", goal="Find errors and generate a corrected code", backstory="You hate any type of errors or irregularly written code so you always correct it & generate the same code in corrected way", llm=llm, allow_delegation=True, verbose=True)
+context = ""
+wrapper = TextWrapper(width=50)
 
-def receive_messages():
-    message = client_socket.recv(1024).decode()
-    print(message)
+# client_ip = '127.0.0.1'
+# client_port = 999 
 
-threading.Thread(target=receive_messages).start()
+# client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# client_socket.connect((client_ip,client_port))
 
-while(True):
-    message = input("Enter the message: ")
-    client_socket.send(message.encode())
+# client_socket.send("DEVELOPER".encode())
 
+chat_frame = CTkScrollableFrame(master=root, width=1400, height=250)
+chat_frame.pack(pady=30)
+
+frame = CTkFrame(master=root, width=800, height=1)
+frame.pack()
+
+chat_frame2 = CTkScrollableFrame(master=root, width=1400, height=250)
+chat_frame2.pack(pady=30)
+
+frame2 = CTkFrame(master=root, width=800, height=1)
+frame2.pack()
+
+description_entry = CTkEntry(master=frame, placeholder_text="Description about the task to be executed", width=800, border_color='white', text_color='white')
+description_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
+combo_box = CTkComboBox(master=frame,values=languages)
+combo_box.grid(row=0, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+
+query_entry = CTkEntry(master=frame2, placeholder_text="Ask about your problem", width=1000, border_color='white', text_color='white')
+query_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
+
+
+def response(description):
+    global context, row
+    developer_task = Task(description=description, agent=developer)
+    tester_task = Task(description="Find errors, correct the code & generate whole corrected code & if no errors are found regenerate the same code", agent=tester)
+    char_length = []
+
+    loader = CTkProgressBar(master=chat_frame, width=300,height=10)
+    loader.set(0)
+    loader.grid()
+    loader.start()
+
+    if(context != ""):
+        goal="Develop & generate the code in the provided technology and check for any errors and correction in the code with the context\ncontext: " + context
+        developer.goal = goal
+
+    else:
+        goal = "Develop & generate the code in the provided technology and check for any errors and correction in the code"
+        developer.goal = goal
+
+    # try:
+    print("5")
+    crew = Crew(tasks=[developer_task], agents=[developer], verbose=True, process=Process.sequential)
+    result = crew.kickoff()
+    print("6")
     
+    wrapped_result = wrapper.wrap(result)
+    result = "".format()
 
-print(client_socket.recv(1024).decode())
+    for word in wrapped_result:
+            result += word
+            char_length.append(len(word))
 
-llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyCJKrxjDXGANCtcW7CCR1n2h4L7EbxUS9k")
+    print(result)
 
-developer = Agent(role="Software Developer",goal="Develop & generate the code in the provided technology and check for any errors and correction in the code",backstory="You are developer who can code in any technology and create the best logics and error free code", llm=llm, allow_delegation=True,verbose=True)
+    loader.set(100)
+    loader.destroy()
 
-description = input("How can I assist you?\n")
+    text_width = max(char_length)*10
+    text_box_height = len(wrapped_result)*20
+            
+    response_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
+    response_message.insert(index=END, text=result)
+    response_message.configure(state="disabled")
+    response_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-task = Task(description=description, agent=developer)
+    row += 100 + text_box_height
+
+    # except Exception as e:
+    #     print("An error occured while responding to the description: ",e)
+
+def getDescription():
+    global row
+    char_length = []
+
+    description = description_entry.get()
+    
+    # response_thread = threading.Thread(target=response, args=(description,))
+    # response_thread.start()
+
+    wrapped_description = wrapper.wrap(text=description)
+    description = ''.format()
+
+    print("1")
+
+    for word in wrapped_description:
+        description += word
+        char_length.append(len(word))
+    
+    
+    text_width = max(char_length)*10
+    text_box_height = len(wrapped_description)*20
+    
+    text_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
+    text_message.insert(index=END, text=description)
+    text_message.configure(state="disabled")
+    text_message.grid(row=row, column=70, columnspan=3, padx=20, pady=30, sticky=NE)
+
+    row += 100 + text_box_height
+    
+    language = combo_box.get()
+
+    if(language != "None"):
+        description += "in" + language
+
+    print("Description: \n",description)
+
+    print("2")
+
+    response(description)
+
+    print("3")
+    # response_thread.join()
+    print("4")
+
+def sendData():
+    message = query_entry.get()
+    print(message)
+    # client_socket.send(message.encode())
+
+def sendFile(file_path, content):
+    index = file_path.rindex("\\")
+    file_name = file_path[index:]
+    client_socket.send(("FILE: ",file_name).encode())
+    time.sleep(1)
+    client_socket.send(content.encode())    
+
+def uploadFiles():
+    global row, context
+    file_path = filedialog.askopenfilename()
+    try:
+        with open(file_path) as file:
+            context = file.read()
+
+        text = "You uploaded a file: ",file_path
+        text_message = CTkTextbox(master=chat_frame, width=(len(text)*10), height=10)
+        text_message.insert(index=END, text=text)
+        text_message.configure(state="disabled")
+        text_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+        sendFile(file_path, context)
+
+        row += 12
+        
+        print(context)
+    except Exception as e:
+        print("An error occurred ",e)
+
+def copyContent():
+    pass
+
+file_uploader = CTkButton(master=frame, text="+",command=uploadFiles, width=50, hover=True)
+file_uploader.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
+
+send_button = CTkButton(master=frame, text="Send",command=getDescription, width=50, hover=True)
+send_button.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
+
+send_button2 = CTkButton(master=frame2, text="Send",command=sendData, width=50, hover=True)
+send_button2.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
+
+# def receiveMessages():
+#     message = client_socket.recv(1024).decode()
+#     print(message)
+
+# threading.Thread(target=receive_messages).start()
+
+# while(True):
+#     message = input("Enter the message: ")
+#     client_socket.send(message.encode())
+
+# print(client_socket.recv(1024).decode())
+
+
+
+# description = input("How can I assist you?\n")
+
+# task = Task(description=description, agent=developer)
 
 # print(task.execute())
-crew = Crew(tasks=[task],agents=[developer])
-result = crew.kickoff()
+# crew = Crew(tasks=[task],agents=[developer], config="Json")
+# result = crew.kickoff()
 
-print(result)
+# print(result)
 
-# streaming text
-# for char in range(len(result)):
-#     print(result[:char])
+root.mainloop()
