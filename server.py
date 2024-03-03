@@ -11,59 +11,73 @@ server.listen()
 print("Waiting for connections\n")
 
 def redirectMessages(client_socket):
-    message = str(client_socket.recv(1024).decode())
-    received_message = message.split(":")
+    while(True):
+        try:
+            message = str(client_socket.recv(1024).decode())
+            received_message = message.split(":")
+            print(received_message)
 
-    if(len(received_message) == 3):
-        sender = received_message[0]
-        receiver = received_message[1]
-        message = receiver + ":" + received_message[3]
+            if(len(received_message) == 3):
+                sender = received_message[0]
+                receiver = received_message[1]
+                message = receiver + ":" + received_message[2]
 
-        if(receiver in clients.values()):
-            for key, value in clients.items():
-                if(value == receiver):
-                    receiver_socket = key
-                    receiver_socket.send(message.encode())
+                if(receiver in clients.keys()):
+                    for client_name in clients.keys():
+                        if(client_name == receiver):
+                            receiver_socket = clients.get(client_name)
+                            receiver_socket.send(message.encode())
+                            break
+                
+                else:
+                    print("Receiver does not exist")
+
+            elif(len(received_message) == 4):
+                sender = received_message[0]
+                receiver = received_message[1]
+                file_name = received_message[2]
+                contents = received_message[3]
+
+                message = receiver + ":" + file_name + ":" + contents
+                
+                if(receiver in clients.keys()):
+                    for client_name in clients.keys():
+                        if(client_name == receiver):
+                            receiver_socket = clients.get(client_name)
+                            receiver_socket.send(message.encode())
+                            break
+                
+                else:
+                    print("Receiver does not exist")
+            
+            elif(len(message) == 5):
+                sender = message[0]
+                receiver = message[1]
+                file_name = message[2]
+                contents = message[3]
+                message = receiver + ":" + file_name + ":" + contents + ":" + message[4]
+
+                if(receiver in clients.keys()):
+                    for client_name in clients.keys():
+                        if(client_name == receiver):
+                            receiver_socket = clients.get(client_name)
+                            receiver_socket.send(message.encode())
+                            break
+                
+                else:
+                    print("Receiver does not exist")
+
+            else:
+                print("Invalid message format\nmessage:", message,"\nreceived message:",received_message)
+
+        except ConnectionResetError as c:
+            for name, socket in clients.items():
+                if(socket == client_socket):
+                    clients.pop(socket)
+                    print("Removed :",name)
                     break
-        
-        else:
-            print("Receiver does not exist")
-
-    elif(len(received_message) == 4):
-        sender = received_message[0]
-        receiver = received_message[1]
-        file_name = received_message[2]
-        contents = received_message[3]
-
-        message = receiver + ":" + file_name + ":" + contents
-
-        if(receiver in clients.values()):
-            for socket, name in clients.items():
-                if(name == receiver):
-                    socket.send(message.encode())
-                    break
-        
-        else:
-            print("Receiver does not exist")
-    
-    elif(len(message) == 5):
-        sender = message[0]
-        receiver = message[1]
-        file_name = message[2]
-        contents = message[3]
-        message = receiver + ":" + file_name + ":" + contents + ":" + message[4]
-
-        if(receiver in clients.values()):
-            for socket, name in clients.items():
-                if(name == receiver):
-                    socket.send(message.encode())
-                    break
-        
-        else:
-            print("Receiver does not exist")
-
-    else:
-        print("Ivalid message format")
+            
+            print(clients.keys())
 
 # def receiveMessages(client_socket):
 #     while(True):

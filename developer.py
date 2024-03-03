@@ -27,13 +27,11 @@ tester = Agent(role="Software Tester", goal="Find errors and generate a correcte
 
 wrapper = TextWrapper(width=50)
 
-# client_ip = '127.0.0.1'
-# client_port = 999 
-
+client_ip = '127.0.0.1'
+client_port = 999 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# client_socket.connect((client_ip,client_port))
-
-# client_socket.send("DEVELOPER".encode())
+client_socket.connect((client_ip,client_port))
+client_socket.send("DEVELOPER".encode())
 
 chat_frame = CTkScrollableFrame(master=root, width=1400, height=250)
 chat_frame.pack(pady=30)
@@ -70,12 +68,10 @@ def response(description):
     loader.start()
 
     if(context != ""):
-        goal="Develop & generate the code in the provided technology and check for any errors and correction in the code with the context\ncontext: " + context
-        developer.goal = goal
+        developer.goal = "Develop & generate the code in the provided technology and check for any errors and correction in the code with the context\ncontext: " + context
 
     else:
-        goal = "Develop & generate the code in the provided technology and check for any errors and correction in the code"
-        developer.goal = goal
+        developer.goal = "Develop & generate the code in the provided technology and check for any errors and correction in the code"
 
     # try:
     print("5")
@@ -101,7 +97,7 @@ def response(description):
     response_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
     response_message.insert(index=END, text=result)
     response_message.configure(state="disabled")
-    response_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+    response_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NSEW)
 
     row += 100 + text_box_height
 
@@ -133,7 +129,7 @@ def getDescription():
     text_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
     text_message.insert(index=END, text=description)
     text_message.configure(state="disabled")
-    text_message.grid(row=row, column=70, columnspan=3, padx=20, pady=30, sticky=NE)
+    text_message.grid(row=row, column=70, columnspan=3, padx=20, pady=30, sticky=NSEW)
 
     row += 100 + text_box_height
     
@@ -153,30 +149,43 @@ def getDescription():
     print("4")
 
 def sendMessage():
-    global file_name, context, sender, receiver
+    global file_name, context, sender, receiver, server_row
 
     if(file_name != "" and context != ""):
         message = sender + ":" + receiver + ":" + file_name + ":" + context + ":" + query_entry.get()
         client_socket.send(message.encode())
+
+        
+        text_message = CTkTextbox(master=chat_frame2, width=(len(message)*10), height=10)
+        text_message.insert(index=END, text=message)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=15, columnspan=3, padx=20, pady=30, sticky=NSEW)
+
+        server_row += 12
+
+        context = ""
     
     elif(query_entry.get() != ""):
         message = sender + ":" + receiver + ":" + query_entry.get()
         client_socket.send(message.encode())
+        
+        text_message = CTkTextbox(master=chat_frame2, width=(len(message)*10), height=10)
+        text_message.insert(index=END, text=message)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=15, columnspan=3, padx=20, pady=30, sticky=NSEW)
+
+        server_row += 12
 
     else:
         print("Message cannot be empty !")
 
-
-def sendFile(file_path, content):
-    index = file_path.rindex("\\")
-    file_name = file_path[index:]
-    
+  
 
 def uploadFiles():
     global row, context, file_name
     file_path = filedialog.askopenfilename()
 
-    index = file_path.rindex("\\")
+    index = file_path.rindex("/")+1
     file_name = file_path[index:]
 
     try:
@@ -187,25 +196,29 @@ def uploadFiles():
         text_message = CTkTextbox(master=chat_frame, width=(len(text)*10), height=10)
         text_message.insert(index=END, text=text)
         text_message.configure(state="disabled")
-        text_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
-
-        
+        text_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NSEW)
 
         row += 12
         
         print(context)
+
     except Exception as e:
         print("An error occurred ",e)
 
 def shareFiles():
-    global server_row, context
+    global server_row, context, file_name
     file_path = filedialog.askopenfilename()
+
+    print(file_path)
+
+    index = file_path.rindex("/")+1
+    file_name = file_path[index:]
     
     try:
         with open(file_path) as file:
             context = file.read()
 
-        text = "You uploaded a file: ",file_path
+        text = "You uploaded a file: " + file_path
         text_message = CTkTextbox(master=chat_frame2, width=(len(text)*10), height=10)
         text_message.insert(index=END, text=text)
         text_message.configure(state="disabled")
@@ -216,12 +229,9 @@ def shareFiles():
         server_row += 12
         
         print(context)
+
     except Exception as e:
         print("An error occurred ",e)
-
-def copyContent():
-    pass
-
 
 
 file_uploader = CTkButton(master=frame, text="+",command=uploadFiles, width=50, hover=True)
@@ -236,29 +246,16 @@ send_button.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 send_button2 = CTkButton(master=frame2, text="Send",command=sendMessage, width=50, hover=True)
 send_button2.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 
-# def receiveMessages():
-#     while(True):
-#         message = client_socket.recv(1024).decode()
-#         print(message)
+def receiveMessages():
+    print("Receiving messages")
+    while(True):
+        try:
+            message = client_socket.recv(1024).decode()
+            print(message)
+        
+        except ConnectionResetError as c:
+            print(c)
 
-# threading.Thread(target=receive_messages).start()
-
-# while(True):
-#     message = input("Enter the message: ")
-#     client_socket.send(message.encode())
-
-# print(client_socket.recv(1024).decode())
-
-
-
-# description = input("How can I assist you?\n")
-
-# task = Task(description=description, agent=developer)
-
-# print(task.execute())
-# crew = Crew(tasks=[task],agents=[developer], config="Json")
-# result = crew.kickoff()
-
-# print(result)
+threading.Thread(target=receiveMessages).start()
 
 root.mainloop()
