@@ -10,26 +10,81 @@ server.bind((server_ip,server_port))
 server.listen()
 print("Waiting for connections\n")
 
-def redirect(client_socket):
-    while(True):
-        print("redirect messaging")
-        message = str(client_socket.recv(1024).decode())
-        print(message)
+def redirectMessages(client_socket):
+    message = str(client_socket.recv(1024).decode())
+    received_message = message.split(":")
 
-        if(message.startswith("DEVELOPER") and "DEVELOPER" in clients.keys()):
-            sock = clients.get("DEVELOPER")
-            sock.send(1024).encode()
+    if(len(received_message) == 3):
+        sender = received_message[0]
+        receiver = received_message[1]
+        message = receiver + ":" + received_message[3]
 
-        elif(message.startswith("MANAGER") and "MANAGER" in clients.keys()):
-            sock = clients.get("MANAGER")
-            sock.send(1024).encode()
+        if(receiver in clients.values()):
+            for key, value in clients.items():
+                if(value == receiver):
+                    receiver_socket = key
+                    receiver_socket.send(message.encode())
+                    break
         
-        elif(message.startswith("TESTER") and "TESTER" in clients.keys("TESTER")):
-            sock = clients.get("TESTER")
-            sock.send(1024).encode()
-
         else:
-            print("The client you want to contact is offline")
+            print("Receiver does not exist")
+
+    elif(len(received_message) == 4):
+        sender = received_message[0]
+        receiver = received_message[1]
+        file_name = received_message[2]
+        contents = received_message[3]
+
+        message = receiver + ":" + file_name + ":" + contents
+
+        if(receiver in clients.values()):
+            for socket, name in clients.items():
+                if(name == receiver):
+                    socket.send(message.encode())
+                    break
+        
+        else:
+            print("Receiver does not exist")
+    
+    elif(len(message) == 5):
+        sender = message[0]
+        receiver = message[1]
+        file_name = message[2]
+        contents = message[3]
+        message = receiver + ":" + file_name + ":" + contents + ":" + message[4]
+
+        if(receiver in clients.values()):
+            for socket, name in clients.items():
+                if(name == receiver):
+                    socket.send(message.encode())
+                    break
+        
+        else:
+            print("Receiver does not exist")
+
+    else:
+        print("Ivalid message format")
+
+# def receiveMessages(client_socket):
+#     while(True):
+#         print("redirect messaging")
+#         message = str(client_socket.recv(1024).decode())
+#         print(message)
+
+#         if(message.startswith("DEVELOPER") and "DEVELOPER" in clients.keys()):
+#             sock = clients.get("DEVELOPER")
+#             sock.send(1024).encode()
+
+#         elif(message.startswith("MANAGER") and "MANAGER" in clients.keys()):
+#             sock = clients.get("MANAGER")
+#             sock.send(1024).encode()
+        
+#         elif(message.startswith("TESTER") and "TESTER" in clients.keys("TESTER")):
+#             sock = clients.get("TESTER")
+#             sock.send(1024).encode()
+
+#         else:
+#             print("The client you want to contact is offline")
         
 
 while(True):
@@ -41,5 +96,5 @@ while(True):
     print(clients.keys())
     client_socket.send("Connected to server successfully".encode())
 
-    thread = threading.Thread(target=redirect, args=(client_socket,))
+    thread = threading.Thread(target=redirectMessages, args=(client_socket,))
     thread.start()

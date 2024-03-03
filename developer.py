@@ -10,6 +10,10 @@ import time
 languages = ['None','Python','Java','MySQl','Javascript']
 row = 0
 server_row = 0
+file_name = ""
+context = ""
+receiver = "MANAGER"
+sender = "DEVELOPER"
 
 root = CTk()
 root.title("Developer")
@@ -20,13 +24,13 @@ customtkinter.set_default_color_theme("green")
 llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyA3HpbYVmRiLl4SkthICYI_x_9lGfoseyc")
 developer = Agent(role="Software Developer",goal="",backstory="You are developer who can code in any technology and create the best logics and error free code", llm=llm, allow_delegation=True,verbose=True)
 tester = Agent(role="Software Tester", goal="Find errors and generate a corrected code", backstory="You hate any type of errors or irregularly written code so you always correct it & generate the same code in corrected way", llm=llm, allow_delegation=True, verbose=True)
-context = ""
+
 wrapper = TextWrapper(width=50)
 
 # client_ip = '127.0.0.1'
 # client_port = 999 
 
-# client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # client_socket.connect((client_ip,client_port))
 
 # client_socket.send("DEVELOPER".encode())
@@ -45,18 +49,19 @@ frame2.pack()
 
 description_entry = CTkEntry(master=frame, placeholder_text="Description about the task to be executed", width=800, border_color='white', text_color='white')
 description_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
+
 combo_box = CTkComboBox(master=frame,values=languages)
 combo_box.grid(row=0, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
 
-query_entry = CTkEntry(master=frame2, placeholder_text="Ask about your problem", width=1000, border_color='white', text_color='white')
+query_entry = CTkEntry(master=frame2, placeholder_text="Send message to your manager", width=1000, border_color='white', text_color='white')
 query_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
 
 
 def response(description):
     global context, row
     developer_task = Task(description=description, agent=developer)
-    tester_task = Task(description="Find errors, correct the code & generate whole corrected code & if no errors are found regenerate the same code", agent=tester)
+    # tester_task = Task(description="Find errors, correct the code & generate whole corrected code & if no errors are found regenerate the same code", agent=tester)
     char_length = []
 
     loader = CTkProgressBar(master=chat_frame, width=300,height=10)
@@ -147,21 +152,33 @@ def getDescription():
     # response_thread.join()
     print("4")
 
-def sendData():
-    message = query_entry.get()
-    print(message)
-    # client_socket.send(message.encode())
+def sendMessage():
+    global file_name, context, sender, receiver
+
+    if(file_name != "" and context != ""):
+        message = sender + ":" + receiver + ":" + file_name + ":" + context + ":" + query_entry.get()
+        client_socket.send(message.encode())
+    
+    elif(query_entry.get() != ""):
+        message = sender + ":" + receiver + ":" + query_entry.get()
+        client_socket.send(message.encode())
+
+    else:
+        print("Message cannot be empty !")
+
 
 def sendFile(file_path, content):
     index = file_path.rindex("\\")
     file_name = file_path[index:]
-    client_socket.send(("FILE: ",file_name).encode())
-    time.sleep(1)
-    client_socket.send(content.encode())    
+    
 
 def uploadFiles():
-    global row, context
+    global row, context, file_name
     file_path = filedialog.askopenfilename()
+
+    index = file_path.rindex("\\")
+    file_name = file_path[index:]
+
     try:
         with open(file_path) as file:
             context = file.read()
@@ -172,9 +189,31 @@ def uploadFiles():
         text_message.configure(state="disabled")
         text_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        sendFile(file_path, context)
+        
 
         row += 12
+        
+        print(context)
+    except Exception as e:
+        print("An error occurred ",e)
+
+def shareFiles():
+    global server_row, context
+    file_path = filedialog.askopenfilename()
+    
+    try:
+        with open(file_path) as file:
+            context = file.read()
+
+        text = "You uploaded a file: ",file_path
+        text_message = CTkTextbox(master=chat_frame2, width=(len(text)*10), height=10)
+        text_message.insert(index=END, text=text)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+        # sendFile(file_path, context)
+
+        server_row += 12
         
         print(context)
     except Exception as e:
@@ -183,18 +222,24 @@ def uploadFiles():
 def copyContent():
     pass
 
+
+
 file_uploader = CTkButton(master=frame, text="+",command=uploadFiles, width=50, hover=True)
 file_uploader.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
+
+share_file = CTkButton(master=frame2, text="Share Files",command=shareFiles, width=50, hover=True)
+share_file.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
 
 send_button = CTkButton(master=frame, text="Send",command=getDescription, width=50, hover=True)
 send_button.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 
-send_button2 = CTkButton(master=frame2, text="Send",command=sendData, width=50, hover=True)
-send_button2.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
+send_button2 = CTkButton(master=frame2, text="Send",command=sendMessage, width=50, hover=True)
+send_button2.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 
 # def receiveMessages():
-#     message = client_socket.recv(1024).decode()
-#     print(message)
+#     while(True):
+#         message = client_socket.recv(1024).decode()
+#         print(message)
 
 # threading.Thread(target=receive_messages).start()
 

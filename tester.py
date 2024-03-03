@@ -42,7 +42,7 @@ user_frame_2.pack()
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyA6EkQPKKMlBVnPyD51-jEZmamHnu_l_jA")
 
-description_entry = CTkEntry(master=user_frame, placeholder_text="Description about the task to be executed", width=800, border_color='white', text_color='white')
+description_entry = CTkEntry(master=user_frame, placeholder_text="Send the code for generating test cases", width=800, border_color='white', text_color='white')
 description_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
 
 chat_entry = CTkEntry(master=user_frame_2, placeholder_text="Ask about your problem", width=1000, border_color='white', text_color='white')
@@ -60,8 +60,8 @@ def response(description):
     global assitant_row
     char_length = []
 
-    tester_agent = Agent(role="Software Tester",goal="Test the code for any errors, generate the corrected code and test cases for it",backstory="You are a code tester who hates incorrect code and love an error free code so you always correct the code", llm=llm, verbose=True, allow_delegation=True)
-    task = Task(description="Generate test cases for the code", agent=tester_agent)
+    tester_agent = Agent(role="Software Tester",goal="Test the code for any errors, generate the corrected code and test cases for it",backstory="You are a code tester who hates incorrect code and love an error free code so you always correct the code", llm=llm, verbose=True, allow_delegation=True, max_rpm=20)
+    task = Task(description=description, agent=tester_agent)
 
     crew = Crew(tasks=[task], agents=[tester_agent])
     result = crew.kickoff()
@@ -82,9 +82,9 @@ def response(description):
     response_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
     response_message.insert(index=END, text=result)
     response_message.configure(state="disabled")
-    response_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+    response_message.grid(row=assitant_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-    row += 100 + text_box_height
+    assitant_row += 100 + text_box_height
 
     print(result)
 
@@ -122,7 +122,6 @@ def sendFile(file_path, content):
     client_socket.send(("FILE: ",file_name).encode())
     time.sleep(1)
     client_socket.send(content.encode())
-
 
 def uploadFiles():
     global row, context
