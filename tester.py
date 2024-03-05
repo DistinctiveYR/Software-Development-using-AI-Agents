@@ -11,8 +11,11 @@ import time
 wrapper = TextWrapper(width=50)
 
 row = 0
-assitant_row = 0
+server_row = 0
 context = ""
+sender = "TESTER"
+receiver = "MANAGER"
+file_name = ""
 
 root = CTk()
 root.geometry("1650x500")
@@ -32,15 +35,16 @@ chat_frame_2.pack(pady=30)
 user_frame_2 = CTkFrame(master=root, width=800, height=1)
 user_frame_2.pack()
 
-# client_ip = '127.0.0.1'
-# client_port = 999 
+client_ip = '127.0.0.1'
+client_port = 999 
 
-# client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# client_socket.connect((client_ip,client_port))
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect((client_ip,client_port))
 
-# client_socket.send("TESTER".encode())
+client_socket.send("TESTER".encode())
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyA6EkQPKKMlBVnPyD51-jEZmamHnu_l_jA")
+tester_agent = Agent(role="Software Tester",goal="Test the code for any errors, generate the corrected code and test cases for it",backstory="You are a code tester who hates incorrect code and love an error free code so you always correct the code", llm=llm, verbose=True, allow_delegation=True, max_rpm=20)
 
 description_entry = CTkEntry(master=user_frame, placeholder_text="Send the code for generating test cases", width=800, border_color='white', text_color='white')
 description_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
@@ -49,18 +53,106 @@ chat_entry = CTkEntry(master=user_frame_2, placeholder_text="Ask about your prob
 chat_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
 
 def receiveMessages():
-    message = client_socket.recv(1024).decode()
+    global server_row, file_name, tester_agent
+    print("Receiving messages")
 
     while(True):
-        if(message == 'FILE'):
-            file_content = client_socket.recv(1024).decode()
-            
+        try:
+            message = client_socket.recv(1024).decode()
+            received_message = message.split(":")
+            print(message)
+
+            if(len(received_message) == 2):
+                sender = received_message[0]
+                # receiver = received_message[1]
+                message = sender + " : " + received_message[1]
+
+                text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+                text_message.insert(index=END, text=message)
+                text_message.configure(state="disabled")
+                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+            elif(len(received_message) == 3):
+                sender = received_message[0]
+                # receiver = received_message[1]
+                file_name = received_message[1]
+                content = received_message[2]
+                message = sender + " : " + file_name
+
+                while(True):
+                    try:
+                        file = open(file_name,"x")
+                        file.writelines(content)
+                        file.close()
+                        break
+                    
+                    except FileExistsError as exists_error:
+                        file_name = "1_" + file_name
+
+                text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+                text_message.insert(index=END, text=message)
+                text_message.configure(state="disabled")
+                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+                server_row += 12
+
+                task = Task(description=content, agent=tester_agent)
+                crew = Crew(tasks=[task], agents=[tester_agent], verbose=2)
+                test_cases = crew.kickoff()
+
+                print(test_cases)
+                
+                text_message = CTkTextbox(master=chat_frame_2, width=(len(test_cases)*10), height=10)
+                text_message.insert(index=END, text=test_cases)
+                text_message.configure(state="disabled")
+                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+                server_row += 12
+
+            elif(len(received_message) == 4):
+                sender = received_message[0]
+                # receiver = received_message[1]
+                file_name = received_message[2]
+                content = received_message[3]
+                message = sender + " : " + file_name + " : " + received_message[4]
+                
+                while(True):
+                    try:
+                        file = open(file_name,"x")
+                        file.writelines(content)
+                        file.close()
+                        break
+                    
+                    except FileExistsError as exists_error:
+                        file_name = "1_" + file_name
+                
+                text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+                text_message.insert(index=END, text=message)
+                text_message.configure(state="disabled")
+                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+                server_row += 12
+
+                task = Task(description=content, agent=tester_agent)
+                crew = Crew(tasks=[task], agents=[tester_agent], verbose=2)
+                test_cases = crew.kickoff()
+
+                print(test_cases)
+                
+                text_message = CTkTextbox(master=chat_frame_2, width=(len(test_cases)*10), height=10)
+                text_message.insert(index=END, text=test_cases)
+                text_message.configure(state="disabled")
+                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+                server_row += 12
+        
+        except ConnectionResetError as c:
+            print(c)            
 
 def response(description):
-    global assitant_row
+    global row
     char_length = []
 
-    tester_agent = Agent(role="Software Tester",goal="Test the code for any errors, generate the corrected code and test cases for it",backstory="You are a code tester who hates incorrect code and love an error free code so you always correct the code", llm=llm, verbose=True, allow_delegation=True, max_rpm=20)
     task = Task(description=description, agent=tester_agent)
 
     crew = Crew(tasks=[task], agents=[tester_agent])
@@ -82,16 +174,22 @@ def response(description):
     response_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
     response_message.insert(index=END, text=result)
     response_message.configure(state="disabled")
-    response_message.grid(row=assitant_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+    response_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-    assitant_row += 100 + text_box_height
+    row += 12 + text_box_height
 
     print(result)
 
 
 def getDescription():
-    global row
-    description = description_entry.get()
+    global row, context
+
+    if(context == ""):
+        description = description_entry.get()
+    else:
+        description = context + description_entry.get()
+        context = ""
+
     char_length = []
     
     wrapped_description = wrapper.wrap(text=description)
@@ -111,21 +209,18 @@ def getDescription():
     text_message.configure(state="disabled")
     text_message.grid(row=row, column=70, columnspan=3, padx=20, pady=30, sticky=NE)
 
-    row += 100 + text_box_height
+    row += 12 + text_box_height
 
     response(description=description)
 
-
-def sendFile(file_path, content):
-    index = file_path.rindex("\\")
-    file_name = file_path[index:]
-    client_socket.send(("FILE: ",file_name).encode())
-    time.sleep(1)
-    client_socket.send(content.encode())
-
 def uploadFiles():
-    global row, context
+    global row, context, file_name
     file_path = filedialog.askopenfilename()
+
+    
+    index = file_path.rindex("/")+1
+    file_name = file_path[index:]
+
     try:
         with open(file_path) as file:
             context = file.read()
@@ -136,22 +231,50 @@ def uploadFiles():
         text_message.configure(state="disabled")
         text_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        sendFile(file_path, context)
-
         row += 12
         
         print(context)
+
     except Exception as e:
         print("An error occurred ",e)
 
 def sendData():
-    message = chat_entry.get()
+    global file_name, context, sender, receiver, server_row
 
-    if(message != ""):
+    if(file_name != "" and context != ""):
+        if(chat_entry.get() != ""):
+            message = sender + ":" + receiver + ":" + file_name + ":" + context + ":" + chat_entry.get()
+            shown_message = sender + ":" + receiver + ":" + file_name + ":" + chat_entry.get()
+        else:
+            message = sender + ":" + receiver + ":" + file_name + ":" + context
+            shown_message = sender + ":" + receiver + ":" + file_name
+            
         client_socket.send(message.encode())
+
+        
+        text_message = CTkTextbox(master=chat_frame_2, width=(len(shown_message)*10), height=10)
+        text_message.insert(index=END, text=shown_message)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+        server_row += 12
     
+    elif(chat_entry.get() != ""):
+        message = sender + ":" + receiver + ":" + chat_entry.get()
+        client_socket.send(message.encode())
+        
+        text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+        text_message.insert(index=END, text=message)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+        server_row += 12
+
     else:
-        tkinter.messagebox.showinfo("Error","Empty message cannot be sent")
+        print("Message cannot be empty !")
+    
+    file_name = ""
+    
 
 upload_button = CTkButton(master=user_frame_2, text="+",command=uploadFiles, width=50, hover=True)
 upload_button.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
@@ -162,14 +285,6 @@ send_button.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 send_button_2 = CTkButton(master=user_frame_2, text="Send",command=sendData, width=50, hover=True)
 send_button_2.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 
-# description = input("Provide the code: ")
-
-# tester = Agent(role="Software Tester",goal="Test the code for any errors, generate the corrected code and test cases for it",backstory="You are a code tester who hates incorrect code and love an error free code so you always correct the code", llm=llm, verbose=True, allow_delegation=True)
-
-# task = Task(description=description, agent=tester)
-
-# crew = Crew(tasks=[task], agents=[tester])
-
-# print(crew.kickoff())
+threading.Thread(target=receiveMessages).start()
 
 root.mainloop()

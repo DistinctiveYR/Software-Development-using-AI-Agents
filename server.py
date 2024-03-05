@@ -20,7 +20,7 @@ def redirectMessages(client_socket):
             if(len(received_message) == 3):
                 sender = received_message[0]
                 receiver = received_message[1]
-                message = receiver + ":" + received_message[2]
+                message = sender + ":" + received_message[2]
 
                 if(receiver in clients.keys()):
                     for client_name in clients.keys():
@@ -38,7 +38,7 @@ def redirectMessages(client_socket):
                 file_name = received_message[2]
                 contents = received_message[3]
 
-                message = receiver + ":" + file_name + ":" + contents
+                message = sender + ":" + file_name + ":" + contents
                 
                 if(receiver in clients.keys()):
                     for client_name in clients.keys():
@@ -50,12 +50,12 @@ def redirectMessages(client_socket):
                 else:
                     print("Receiver does not exist")
             
-            elif(len(message) == 5):
+            elif(len(received_message) == 5):
                 sender = message[0]
                 receiver = message[1]
                 file_name = message[2]
                 contents = message[3]
-                message = receiver + ":" + file_name + ":" + contents + ":" + message[4]
+                message = sender + ":" + file_name + ":" + contents + ":" + message[4]
 
                 if(receiver in clients.keys()):
                     for client_name in clients.keys():
@@ -71,13 +71,27 @@ def redirectMessages(client_socket):
                 print("Invalid message format\nmessage:", message,"\nreceived message:",received_message)
 
         except ConnectionResetError as c:
+            print(c)
+
             for name, socket in clients.items():
-                if(socket == client_socket):
+                if(client_socket == socket):
                     clients.pop(socket)
                     print("Removed :",name)
                     break
             
             print(clients.keys())
+        
+        except WindowsError as windows_error:
+            print(windows_error)
+
+            for name, socket in clients.items():
+                if(client_socket == socket):
+                    clients.pop(socket)
+                    print("Removed :",name)
+                    break
+            
+            print(clients.keys())
+
 
 # def receiveMessages(client_socket):
 #     while(True):

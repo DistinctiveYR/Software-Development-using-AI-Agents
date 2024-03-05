@@ -83,8 +83,8 @@ def response(description):
     result = "".format()
 
     for word in wrapped_result:
-            result += word
-            char_length.append(len(word))
+        result += word
+        char_length.append(len(word))
 
     print(result)
 
@@ -152,7 +152,11 @@ def sendMessage():
     global file_name, context, sender, receiver, server_row
 
     if(file_name != "" and context != ""):
-        message = sender + ":" + receiver + ":" + file_name + ":" + context + ":" + query_entry.get()
+        if(query_entry.get() != ""):
+            message = sender + ":" + receiver + ":" + file_name + ":" + context + ":" + query_entry.get()
+        else:
+            message = sender + ":" + receiver + ":" + file_name + ":" + context
+            
         client_socket.send(message.encode())
 
         
@@ -233,6 +237,73 @@ def shareFiles():
     except Exception as e:
         print("An error occurred ",e)
 
+def receiveMessages():
+    print("Receiving messages")
+    while(True):
+        try:
+            message = client_socket.recv(1024).decode()
+            received_message = message.split(":")
+
+            if(len(received_message) == 2):
+                sender = received_message[0]
+                # receiver = received_message[1]
+                message = sender + " : " + received_message[1]
+
+                text_message = CTkTextbox(master=chat_frame2, width=(len(message)*10), height=10)
+                text_message.insert(index=END, text=message)
+                text_message.configure(state="disabled")
+                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+            elif(len(received_message) == 3):
+                sender = received_message[0]
+                # receiver = received_message[1]
+                file_name = received_message[1]
+                content = received_message[2]
+                message = sender + " : " + file_name
+                
+
+                while(True):
+                    try:
+                        file = open(file_name,"x")
+                        file.writelines(content)
+                        file.close()
+                        break
+                    
+                    except FileExistsError as exists_error:
+                        file_name = "1_" + file_name
+                
+                text_message = CTkTextbox(master=chat_frame2, width=(len(message)*10), height=10)
+                text_message.insert(index=END, text=message)
+                text_message.configure(state="disabled")
+                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+            elif(len(received_message) == 4):
+                sender = received_message[0]
+                # receiver = received_message[1]
+                file_name = received_message[2]
+                content = received_message[3]
+                message = receiver + " : " + file_name + " : " + received_message[4]
+
+                
+                while(True):
+                    try:
+                        file = open(file_name,"x")
+                        file.writelines(content)
+                        file.close()
+                        break
+                    
+                    except FileExistsError as exists_error:
+                        file_name = "1_" + file_name
+
+                
+                text_message = CTkTextbox(master=chat_frame2, width=(len(message)*10), height=10)
+                text_message.insert(index=END, text=message)
+                text_message.configure(state="disabled")
+                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+        
+        except ConnectionResetError as c:
+            print(c)
+
 
 file_uploader = CTkButton(master=frame, text="+",command=uploadFiles, width=50, hover=True)
 file_uploader.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
@@ -246,15 +317,6 @@ send_button.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 send_button2 = CTkButton(master=frame2, text="Send",command=sendMessage, width=50, hover=True)
 send_button2.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 
-def receiveMessages():
-    print("Receiving messages")
-    while(True):
-        try:
-            message = client_socket.recv(1024).decode()
-            print(message)
-        
-        except ConnectionResetError as c:
-            print(c)
 
 threading.Thread(target=receiveMessages).start()
 
