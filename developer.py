@@ -27,11 +27,11 @@ tester = Agent(role="Software Tester", goal="Find errors and generate a correcte
 
 wrapper = TextWrapper(width=50)
 
-client_ip = '127.0.0.1'
-client_port = 999 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((client_ip,client_port))
-client_socket.send("DEVELOPER".encode())
+# client_ip = '127.0.0.1'
+# client_port = 999 
+# client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# client_socket.connect((client_ip,client_port))
+# client_socket.send("DEVELOPER".encode())
 
 chat_frame = CTkScrollableFrame(master=root, width=1400, height=250)
 chat_frame.pack(pady=30)
@@ -62,10 +62,10 @@ def response(description):
     # tester_task = Task(description="Find errors, correct the code & generate whole corrected code & if no errors are found regenerate the same code", agent=tester)
     char_length = []
 
-    loader = CTkProgressBar(master=chat_frame, width=300,height=10)
-    loader.set(0)
-    loader.grid()
-    loader.start()
+    # loader = CTkProgressBar(master=chat_frame, width=300,height=10)
+    # loader.set(0)
+    # loader.grid()
+    # loader.start()
 
     if(context != ""):
         developer.goal = "Develop & generate the code in the provided technology and check for any errors and correction in the code with the context\ncontext: " + context
@@ -75,24 +75,32 @@ def response(description):
 
     # try:
     print("5")
-    crew = Crew(tasks=[developer_task], agents=[developer], verbose=True, process=Process.sequential)
+    crew = Crew(tasks=[developer_task], agents=[developer], verbose=True, process=Process.sequential, max_rpm=20)
     result = crew.kickoff()
-    print("6")
-    
-    wrapped_result = wrapper.wrap(result)
-    result = "".format()
-
-    for word in wrapped_result:
-        result += word
-        char_length.append(len(word))
-
     print(result)
+    print("6")
+    print("###############################")
+    # wrapped_result = wrapper.wrap(result)
+    # print((wrapped_result))
+    # result = "".format()
 
-    loader.set(100)
-    loader.destroy()
+    # for word in wrapped_result:
+    #     result += word
+    #     char_length.append(len(word))
 
-    text_width = max(char_length)*10
-    text_box_height = len(wrapped_result)*20
+    # print(result)
+
+    # loader.set(100)
+    # loader.destroy()
+
+    # text_width = max(char_length)*10
+    # text_box_height = len(wrapped_result)*20
+
+    
+    text_width = 500
+    text_box_height = len(result.split('\n'))*10
+
+    print(text_box_height)
             
     response_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
     response_message.insert(index=END, text=result)
@@ -136,7 +144,7 @@ def getDescription():
     language = combo_box.get()
 
     if(language != "None"):
-        description += "in" + language
+        description += " in " + language
 
     print("Description: \n",description)
 
@@ -182,8 +190,6 @@ def sendMessage():
 
     else:
         print("Message cannot be empty !")
-
-  
 
 def uploadFiles():
     global row, context, file_name

@@ -16,7 +16,6 @@ wrapper = TextWrapper(width = 50)
 context = ""
 file_name = ""
 sender = "MANAGER"
-receiver = "TESTER"
 
 row = 0
 server_row = 0
@@ -45,13 +44,13 @@ user_frame_2.pack()
 description_entry = CTkEntry(master=user_frame, placeholder_text="Tell me about the project and let me explain you", width=800, border_color='white', text_color='white')
 description_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
 
-chat_entry = CTkEntry(master=user_frame_2, placeholder_text="Ask about your problem", width=1000, border_color='white', text_color='white')
+chat_entry = CTkEntry(master=user_frame_2, placeholder_text="Ask about your problem", width=600, border_color='white', text_color='white')
 chat_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
 
 
 def response(description):
     global row
-    char_length = []
+    # char_length = []
 
     manager = Agent(role="Manager", max_rpm=20, goal="explain the project create plan for the software projects, suggest ideas on how the project should be executed in the most effecient way and in the minimum time", backstory="You are a manager of a software developer department and you are the best at explaning a project to others managing work and delegating work among your teammates based on their skills", allow_delegation=False, llm=llm)
     manager_task = Task(description=description, agent=manager)
@@ -59,16 +58,19 @@ def response(description):
     crew = Crew(tasks=[manager_task], agents=[manager])
     result = crew.kickoff()
 
-    wrapped_result = wrapper.wrap(result)
-    result = "".format()
+    # wrapped_result = wrapper.wrap(result)
+    # result = "".format()
 
-    for word in wrapped_result:
-            result += word
-            char_length.append(len(word))
+    # for word in wrapped_result:
+    #         result += word
+    #         char_length.append(len(word))
 
 
-    text_width = max(char_length)*20
-    text_box_height = len(wrapped_result)*5
+    # text_width = max(char_length)*20
+    # text_box_height = len(wrapped_result)*5
+                
+    text_width = 500
+    text_box_height = len(result.split('\n'))*10
             
     response_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
     response_message.insert(index=END, text=result)
@@ -120,8 +122,10 @@ def getDescription():
 
     response(description)
 
-def sendDataToServer():
-    global file_name, context, sender, receiver, server_row
+def sendDataToTester():
+    global file_name, context, sender, server_row
+
+    receiver = "TESTER"
 
     if(file_name != "" and context != ""):
         if(chat_entry.get() != ""):
@@ -157,7 +161,46 @@ def sendDataToServer():
 
     context = ""
     file_name = ""
+
+def sendDataToDeveloper():
+    global file_name, context, sender, server_row
+
+    receiver = "DEVELOPER"
+
+    if(file_name != "" and context != ""):
+        if(chat_entry.get() != ""):
+            message = sender + ":" + receiver + ":" + file_name + ":" + context + ":" + chat_entry.get()
+            shown_message = sender + ":" + receiver + ":" + file_name + ":" + chat_entry.get()
+        else:
+            message = sender + ":" + receiver + ":" + file_name + ":" + context
+            shown_message = sender + ":" + receiver + ":" + file_name
+            
+        client_socket.send(message.encode())
+        
+        text_message = CTkTextbox(master=chat_frame_2, width=(len(shown_message)*10), height=10)
+        text_message.insert(index=END, text=shown_message)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+        server_row += 12
     
+    elif(chat_entry.get() != ""):
+        message = sender + ":" + receiver + ":" + chat_entry.get()
+
+        client_socket.send(message.encode())
+        
+        text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+        text_message.insert(index=END, text=message)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+        server_row += 12
+
+    else:
+        print("Message cannot be empty !")
+
+    context = ""
+    file_name = ""
 
 def sendFileToAssistant():
     global row, context
@@ -283,9 +326,11 @@ send_button.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 upload_button_down = CTkButton(master=user_frame_2, text="Share Files",command=sendFileToServer, width=50, hover=True)
 upload_button_down.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
 
-send_button_2 = CTkButton(master=user_frame_2, text="Send",command=sendDataToServer, width=50, hover=True)
-send_button_2.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
+send_to_tester_button = CTkButton(master=user_frame_2, text="Send to Tester",command=sendDataToTester, width=50, hover=True)
+send_to_tester_button.grid(row=0, column=15, columnspan=5, padx=20, pady=30, sticky=NE)
 
+send_to_developer_button = CTkButton(master=user_frame_2, text="Send to Developer",command=sendDataToDeveloper, width=50, hover=True)
+send_to_developer_button.grid(row=0, column=20, columnspan=5, padx=20, pady=30, sticky=NE)
 
 threading.Thread(target=receiveMessages).start()
 

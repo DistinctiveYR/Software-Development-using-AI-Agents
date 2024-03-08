@@ -151,26 +151,29 @@ def receiveMessages():
 
 def response(description):
     global row
-    char_length = []
+    # char_length = []
 
     task = Task(description=description, agent=tester_agent)
 
     crew = Crew(tasks=[task], agents=[tester_agent])
     result = crew.kickoff()
 
-    wrapped_result = wrapper.wrap(result)
-    result = "".format()
+    # wrapped_result = wrapper.wrap(result)
+    # result = "".format()
 
-    for word in wrapped_result:
-            result += word
-            char_length.append(len(word))
+    # for word in wrapped_result:
+    #         result += word
+    #         char_length.append(len(word))
 
     # loader.set(100)
     # loader.destroy()
 
-    text_width = max(char_length)*10
-    text_box_height = len(wrapped_result)*20
-            
+    # text_width = max(char_length)*10
+    # text_box_height = len(wrapped_result)*20
+    
+    text_width = 500
+    text_box_height = len(result.split('\n'))*10
+
     response_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
     response_message.insert(index=END, text=result)
     response_message.configure(state="disabled")
