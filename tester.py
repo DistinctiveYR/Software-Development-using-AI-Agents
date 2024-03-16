@@ -8,7 +8,7 @@ import tkinter
 from textwrap import *
 import time
 
-wrapper = TextWrapper(width=50)
+wrapper = TextWrapper(width=100)
 
 row = 0
 server_row = 0
@@ -23,6 +23,9 @@ root.title("Tester")
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("green")
 
+font = CTkFont(family="Verdana",size=14)
+
+
 chat_frame = CTkScrollableFrame(master=root,width=1400, height=250)
 chat_frame.pack(pady=30)
 
@@ -35,13 +38,11 @@ chat_frame_2.pack(pady=30)
 user_frame_2 = CTkFrame(master=root, width=800, height=1)
 user_frame_2.pack()
 
-client_ip = '127.0.0.1'
-client_port = 999 
-
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((client_ip,client_port))
-
-client_socket.send("TESTER".encode())
+# client_ip = '127.0.0.1'
+# client_port = 999
+# client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# client_socket.connect((client_ip,client_port))
+# client_socket.send("TESTER".encode())
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyA6EkQPKKMlBVnPyD51-jEZmamHnu_l_jA")
 tester_agent = Agent(role="Software Tester",goal="Test the code for any errors, generate the corrected code and test cases for it",backstory="You are a code tester who hates incorrect code and love an error free code so you always correct the code", llm=llm, verbose=True, allow_delegation=True, max_rpm=20)
@@ -51,6 +52,61 @@ description_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=N
 
 chat_entry = CTkEntry(master=user_frame_2, placeholder_text="Ask about your problem", width=1000, border_color='white', text_color='white')
 chat_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
+
+
+def textboxDimensions(text):
+    char_length = []
+    
+    wrapped_text = wrapper.wrap(text)
+
+    for text in wrapped_text:
+        char_length.append(font.measure(text))
+                
+    text_box_width = max(char_length)
+                
+    if(text_box_width <= 32):
+        text_box_width = 35
+
+    text_box_height = font.metrics("linespace") * len(wrapped_text)
+
+    return (text_box_width, text_box_height)
+
+
+def responseOnReceivingMessage(content):
+    global server_row, font
+
+    char_length = []    
+
+    try:
+        task = Task(description=content, agent=tester_agent)
+        crew = Crew(tasks=[task], agents=[tester_agent], verbose=2)
+        test_cases = crew.kickoff()
+
+        print(test_cases)
+        
+        wrapped_response = wrapper.wrap(test_cases)
+
+        for text in wrapped_response:
+            char_length.append(font.measure(text))
+        
+        text_box_width = max(char_length)
+
+        if(text_box_width <= 32):
+            text_box_width = 35
+
+        text_box_height = font.metrics("linespace") * len(wrapped_response)
+
+        print(text_box_height)
+                    
+        text_message = CTkTextbox(master=chat_frame_2, width=text_box_width, height=text_box_height, font=font)
+        text_message.insert(index=END, text=test_cases)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=10, columnspan=3, padx=20, pady=30, sticky=NE)
+
+        server_row += 5 + text_box_height
+    
+    except Exception as e:
+        print("An error occured",e)
 
 def receiveMessages():
     global server_row, file_name, tester_agent
@@ -66,11 +122,16 @@ def receiveMessages():
                 sender = received_message[0]
                 # receiver = received_message[1]
                 message = sender + " : " + received_message[1]
+                print(message)
 
-                text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+                textbox_dimensions = textboxDimensions(text=message)
+
+                text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
                 text_message.insert(index=END, text=message)
                 text_message.configure(state="disabled")
                 text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+                server_row += 10 + textbox_dimensions[1]
 
             elif(len(received_message) == 3):
                 sender = received_message[0]
@@ -78,8 +139,10 @@ def receiveMessages():
                 file_name = received_message[1]
                 content = received_message[2]
                 message = sender + " : " + file_name
+                print(message)
 
                 while(True):
+                    i = 1
                     try:
                         file = open(file_name,"x")
                         file.writelines(content)
@@ -87,27 +150,19 @@ def receiveMessages():
                         break
                     
                     except FileExistsError as exists_error:
-                        file_name = "1_" + file_name
+                        file_name = str(i) + "_" + file_name
+                        i += 1
+                
+                textbox_dimensions = textboxDimensions(text=message)
 
-                text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+                text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
                 text_message.insert(index=END, text=message)
                 text_message.configure(state="disabled")
                 text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-                server_row += 12
+                server_row += 10 + textbox_dimensions[1]
 
-                task = Task(description=content, agent=tester_agent)
-                crew = Crew(tasks=[task], agents=[tester_agent], verbose=2)
-                test_cases = crew.kickoff()
-
-                print(test_cases)
-                
-                text_message = CTkTextbox(master=chat_frame_2, width=(len(test_cases)*10), height=10)
-                text_message.insert(index=END, text=test_cases)
-                text_message.configure(state="disabled")
-                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
-
-                server_row += 12
+                responseOnReceivingMessage(content)                
 
             elif(len(received_message) == 4):
                 sender = received_message[0]
@@ -115,8 +170,10 @@ def receiveMessages():
                 file_name = received_message[2]
                 content = received_message[3]
                 message = sender + " : " + file_name + " : " + received_message[4]
+                print(message)
                 
                 while(True):
+                    i = 1
                     try:
                         file = open(file_name,"x")
                         file.writelines(content)
@@ -124,65 +181,42 @@ def receiveMessages():
                         break
                     
                     except FileExistsError as exists_error:
-                        file_name = "1_" + file_name
-                
-                text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+                        file_name = str(i) + "_" + file_name
+                        i += 1
+
+                textbox_dimensions = textboxDimensions(text=message)
+
+                text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
                 text_message.insert(index=END, text=message)
                 text_message.configure(state="disabled")
                 text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-                server_row += 12
-
-                task = Task(description=content, agent=tester_agent)
-                crew = Crew(tasks=[task], agents=[tester_agent], verbose=2)
-                test_cases = crew.kickoff()
-
-                print(test_cases)
+                server_row += 10 + textbox_dimensions[1]
                 
-                text_message = CTkTextbox(master=chat_frame_2, width=(len(test_cases)*10), height=10)
-                text_message.insert(index=END, text=test_cases)
-                text_message.configure(state="disabled")
-                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+                responseOnReceivingMessage(content)
 
-                server_row += 12
+            
         
         except ConnectionResetError as c:
             print(c)            
 
 def response(description):
     global row
-    # char_length = []
 
     task = Task(description=description, agent=tester_agent)
-
     crew = Crew(tasks=[task], agents=[tester_agent])
-    result = crew.kickoff()
+    test_cases = crew.kickoff()
 
-    # wrapped_result = wrapper.wrap(result)
-    # result = "".format()
+    textbox_dimensions = textboxDimensions(test_cases)
 
-    # for word in wrapped_result:
-    #         result += word
-    #         char_length.append(len(word))
-
-    # loader.set(100)
-    # loader.destroy()
-
-    # text_width = max(char_length)*10
-    # text_box_height = len(wrapped_result)*20
-    
-    text_width = 500
-    text_box_height = len(result.split('\n'))*10
-
-    response_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
-    response_message.insert(index=END, text=result)
+    response_message = CTkTextbox(master=chat_frame, width=textbox_dimensions[0], height=textbox_dimensions[1])
+    response_message.insert(index=END, text=test_cases)
     response_message.configure(state="disabled")
     response_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-    row += 12 + text_box_height
+    row += 10 + textbox_dimensions[1]
 
-    print(result)
-
+    print(test_cases)
 
 def getDescription():
     global row, context
@@ -193,26 +227,14 @@ def getDescription():
         description = context + description_entry.get()
         context = ""
 
-    char_length = []
-    
-    wrapped_description = wrapper.wrap(text=description)
-    description = ''.format()
+    textbox_dimensions = textboxDimensions(description)
 
-
-    for word in wrapped_description:
-        description += word
-        char_length.append(len(word))
-    
-    
-    text_width = max(char_length)*10
-    text_box_height = len(wrapped_description)*20
-    
-    text_message = CTkTextbox(master=chat_frame, width=text_width, height=text_box_height)
+    text_message = CTkTextbox(master=chat_frame, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
     text_message.insert(index=END, text=description)
     text_message.configure(state="disabled")
-    text_message.grid(row=row, column=70, columnspan=3, padx=20, pady=30, sticky=NE)
+    text_message.grid(row=row, column=10, columnspan=3, padx=20, pady=30, sticky=NE)
 
-    row += 12 + text_box_height
+    row += 10 + textbox_dimensions[1]
 
     response(description=description)
 
@@ -229,7 +251,7 @@ def uploadFiles():
             context = file.read()
 
         text = "You uploaded a file: ",file_path
-        text_message = CTkTextbox(master=chat_frame, width=(len(text)*10), height=10)
+        text_message = CTkTextbox(master=chat_frame, height=10)
         text_message.insert(index=END, text=text)
         text_message.configure(state="disabled")
         text_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
