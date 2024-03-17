@@ -53,6 +53,7 @@ def redirectMessages(client_socket):
             elif(len(received_message) == 5):
                 sender = message[0]
                 receiver = message[1]
+                print("receiver ", receiver)
                 file_name = message[2]
                 contents = message[3]
                 message = sender + ":" + file_name + ":" + contents + ":" + message[4]

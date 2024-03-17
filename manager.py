@@ -13,7 +13,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("green")
 font = CTkFont(family="Verdana",size=14)
 
-wrapper = TextWrapper(width = 50)
+
 context = ""
 file_name = ""
 sender = "MANAGER"
@@ -49,6 +49,7 @@ chat_entry = CTkEntry(master=user_frame_2, placeholder_text="Ask about your prob
 chat_entry.grid(row=0, column=1, columnspan=3, padx=20, pady=30, sticky=NE)
 
 def textboxDimensions(text):
+    wrapper = TextWrapper(width = 100)
     char_length = []
     
     wrapped_text = wrapper.wrap(text)
@@ -56,14 +57,18 @@ def textboxDimensions(text):
     for text in wrapped_text:
         char_length.append(font.measure(text))
                 
-    text_box_width = max(char_length)
+    text_box_width = max(char_length) + 50
                 
     if(text_box_width <= 32):
         text_box_width = 35
+    
+    print("text_box_width :",text_box_width)
 
     text_box_height = font.metrics("linespace") * len(wrapped_text)
 
-    return (text_box_width, text_box_height)
+    width, height = (text_box_width, text_box_height)
+
+    return width, height
 
 def response(description):
     global row
@@ -76,14 +81,14 @@ def response(description):
         crew = Crew(tasks=[manager_task], agents=[manager], max_rpm=20)
         result = crew.kickoff()
                     
-        textbox_dimensions = textboxDimensions(text=result)
+        width, height = textboxDimensions(text=result)
                 
-        response_message = CTkTextbox(master=chat_frame, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+        response_message = CTkTextbox(master=chat_frame, width=width, height=height, font=font)
         response_message.insert(index=END, text=result)
         response_message.configure(state="disabled")
         response_message.grid(row=row, column=0, columnspan=3, padx=20, pady=30, sticky=NSEW)
 
-        row += 12 + textbox_dimensions[0]
+        row += 12 + height
 
         print(result)
     
@@ -100,15 +105,15 @@ def getDescription():
         description = context + description_entry.get()
         context = ""
     
-    textbox_dimensions = textboxDimensions(text=description)
+    width, height = textboxDimensions(text=description)
     
-    text_message = CTkTextbox(master=chat_frame, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+    text_message = CTkTextbox(master=chat_frame, width=width, height=height, font=font)
     text_message.insert(index=END, text=description)
     text_message.configure(state="disabled")
     text_message.grid(row=row, column=0, columnspan=3, padx=20, pady=30, sticky=NSEW)
     
 
-    row += 12 + textbox_dimensions[0]
+    row += 12 + height
     
 
     print("Description: \n",description)
@@ -131,28 +136,28 @@ def sendDataToTester():
             
         client_socket.send(message.encode())
 
-        textbox_dimensions = textboxDimensions(text=message)
+        width, height = textboxDimensions(text=message)
         
-        text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font)
         text_message.insert(index=END, text=shown_message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        server_row += 12 + textbox_dimensions[0]
+        server_row += 12 + height
     
     elif(chat_entry.get() != ""):
         message = sender + ":" + receiver + ":" + chat_entry.get()
 
         client_socket.send(message.encode())
 
-        textbox_dimensions = textboxDimensions(text=message)
+        width, height = textboxDimensions(text=message)
         
-        text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font)
         text_message.insert(index=END, text=message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        server_row += 12 + textbox_dimensions[0]
+        server_row += 12 + height
 
     else:
         print("Message cannot be empty !")
@@ -161,6 +166,7 @@ def sendDataToTester():
     file_name = ""
 
 def sendDataToDeveloper():
+    print("sending to dev")
     global file_name, context, sender, server_row
 
     receiver = "DEVELOPER"
@@ -175,28 +181,31 @@ def sendDataToDeveloper():
             
         client_socket.send(message.encode())
 
-        textbox_dimensions = textboxDimensions(text=message)
+        print("lol")
+
+        width, height = textboxDimensions(message)
+
         
-        text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font, activate_scrollbars=False)
         text_message.insert(index=END, text=shown_message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        server_row += 12 + textbox_dimensions[0]
+        server_row += 12 + height
     
     elif(chat_entry.get() != ""):
         message = sender + ":" + receiver + ":" + chat_entry.get()
 
         client_socket.send(message.encode())
 
-        textbox_dimensions = textboxDimensions(text=message)
+        width, height = textboxDimensions(text=message)
         
-        text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font, activate_scrollbars=False)
         text_message.insert(index=END, text=message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        server_row += 12 + textbox_dimensions[0]
+        server_row += 12 + height
 
     else:
         print("Message cannot be empty !")
@@ -214,14 +223,14 @@ def sendFileToAssistant():
 
         text = "You uploaded a file: ",file_path
         
-        textbox_dimensions = textboxDimensions(text=text)
+        # width, height = textboxDimensions(text=text)
 
-        text_message = CTkTextbox(master=chat_frame, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+        text_message = CTkTextbox(master=chat_frame, height=10, font=font)
         text_message.insert(index=END, text=text)
         text_message.configure(state="disabled")
         text_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        row += 12 + textbox_dimensions[0]
+        row += 12
         
         print(context)
 
@@ -242,16 +251,16 @@ def sendFileToServer():
 
         text = "You uploaded a file: " + file_path
 
-        texbox_dimensions = textboxDimensions(text=text)
+        # texbox_dimensions = textboxDimensions(text=text)
 
-        text_message = CTkTextbox(master=chat_frame_2, width=texbox_dimensions[0], height=texbox_dimensions[1], font=font)
+        text_message = CTkTextbox(master=chat_frame_2, height=10, font=font)
         text_message.insert(index=END, text=text)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
         # sendFile(file_path, context)
 
-        server_row += 12 + texbox_dimensions[0]
+        server_row += 12 
         
         print(context)
         
@@ -259,6 +268,7 @@ def sendFileToServer():
         print("An error occurred ",e)
 
 def receiveMessages():
+    global server_row
     print("Receiving messages")
     while(True):
         try:
@@ -271,12 +281,14 @@ def receiveMessages():
                 message = sender + " : " + received_message[1]
                 print(message)
 
-                textbox_dimensions = textboxDimensions(text=message)
+                width, height = textboxDimensions(text=message)
 
-                text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+                text_message = CTkTextbox(master=chat_frame_2, width=width,  height=height, font=font)
                 text_message.insert(index=END, text=message)
                 text_message.configure(state="disabled")
-                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+                text_message.grid(row=server_row, column=50, columnspan=3, padx=20, pady=30, sticky=NE)
+
+                server_row += 12 + height
 
             elif(len(received_message) == 3):
                 sender = received_message[0]
@@ -299,12 +311,14 @@ def receiveMessages():
                         file_name = str(i) + "_" + file_name
                         i += 1
                 
-                textbox_dimensions = textboxDimensions(text=message)
+                width, height = textboxDimensions(text=message)
 
-                text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+                text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font)
                 text_message.insert(index=END, text=message)
                 text_message.configure(state="disabled")
-                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+                text_message.grid(row=server_row, column=50, columnspan=3, padx=20, pady=30, sticky=NE)
+
+                server_row += 12 + height
 
             elif(len(received_message) == 4):
                 sender = received_message[0]
@@ -327,12 +341,14 @@ def receiveMessages():
                         file_name = str(i) + "_" + file_name
                         i += 1
                 
-                textbox_dimensions = textboxDimensions(text=message)
+                width, height = textboxDimensions(text=message)
 
-                text_message = CTkTextbox(master=chat_frame_2, width=textbox_dimensions[0], height=textbox_dimensions[1], font=font)
+                text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font)
                 text_message.insert(index=END, text=message)
                 text_message.configure(state="disabled")
-                text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+                text_message.grid(row=server_row, column=50, columnspan=3, padx=20, pady=30, sticky=NE)
+
+                server_row += 12 + height
         
         except ConnectionResetError as c:
             print(c)
