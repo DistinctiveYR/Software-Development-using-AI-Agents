@@ -207,7 +207,7 @@ def response(description):
     print(test_cases)
 
 def getDescription():
-    global row, context
+    global server_row, context
 
     if(context == ""):
         description = description_entry.get()
@@ -217,12 +217,12 @@ def getDescription():
 
     width, height = textboxDimensions(description)
 
-    text_message = CTkTextbox(master=chat_frame, width=width, height=height, font=font)
+    text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font)
     text_message.insert(index=END, text=description)
     text_message.configure(state="disabled")
-    text_message.grid(row=row, column=10, columnspan=3, padx=20, pady=30, sticky=NE)
+    text_message.grid(row=server_row, column=10, columnspan=3, padx=20, pady=30, sticky=NE)
 
-    row += 10 + height
+    server_row += 10 + height
 
     response(description=description)
 
