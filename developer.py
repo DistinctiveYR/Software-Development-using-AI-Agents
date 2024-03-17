@@ -6,6 +6,11 @@ from tkinter import *
 import customtkinter
 from textwrap import *
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
+
+api_key = "AIzaSyBRq0lBBzedI2d1aDt6ESBGN3hNrFzmLeE"
 
 languages = ['None','Python','Java','MySQl','Javascript']
 row = 0
@@ -22,7 +27,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("green")
 font = CTkFont(family="Verdana",size=14)
 
-llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyA3HpbYVmRiLl4SkthICYI_x_9lGfoseyc")
+llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key=api_key)
 developer = Agent(role="Software Developer",goal="",backstory="You are developer who can code in any technology and create the best logics and error free code", llm=llm, allow_delegation=True,verbose=True)
 tester = Agent(role="Software Tester", goal="Find errors and generate a corrected code", backstory="You hate any type of errors or irregularly written code so you always correct it & generate the same code in corrected way", llm=llm, allow_delegation=True, verbose=True)
 
@@ -85,12 +90,8 @@ def response(description):
         developer.goal = "Develop & generate the code in the provided technology and check for any errors and correction in the code"
 
     try:
-        print("5")
         crew = Crew(tasks=[developer_task], agents=[developer], verbose=True, process=Process.sequential, max_rpm=20)
         result = crew.kickoff()
-        print(result)
-        print("6")
-        print("###############################")
 
         width, height = textboxDimensions(text=result)      
                 
@@ -113,7 +114,7 @@ def getDescription():
 
     width, height = textboxDimensions(text=description)
     
-    text_message = CTkTextbox(master=chat_frame, width=width, height=height, font=font)
+    text_message = CTkTextbox(master=chat_frame, width=width, height=height+50, font=font)
     text_message.insert(index=END, text=description)
     text_message.configure(state="disabled")
     text_message.grid(row=row, column=70, columnspan=3, padx=20, pady=30, sticky=NSEW)
@@ -124,8 +125,6 @@ def getDescription():
 
     if(language != "None"):
         description += " in " + language
-
-    print("Description: \n",description)
 
     response(description=description)
 
@@ -142,7 +141,7 @@ def sendMessage():
 
         width, height = textboxDimensions(text=message)
         
-        text_message = CTkTextbox(master=chat_frame2, width=width, height=height, font=font)
+        text_message = CTkTextbox(master=chat_frame2, width=width, height=height+50, font=font)
         text_message.insert(index=END, text=message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=15, columnspan=3, padx=20, pady=30, sticky=NSEW)
@@ -227,7 +226,6 @@ def shareFiles():
 
 def receiveMessages():
     global server_row
-    print("Receiving messages")
     while(True):
         try:
             message = client_socket.recv(1024).decode()
@@ -281,9 +279,9 @@ def receiveMessages():
             elif(len(received_message) == 4):
                 sender = received_message[0]
                 # receiver = received_message[1]
-                file_name = received_message[2]
-                content = received_message[3]
-                message = receiver + " : " + file_name + " : " + received_message[4]
+                file_name = received_message[1]
+                content = received_message[2]
+                message = receiver + " : " + file_name + " : " + received_message[3]
                 print(message)
                 
                 while(True):

@@ -7,6 +7,11 @@ from tkinter import *
 import tkinter
 from textwrap import *
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
+
+api_key = "AIzaSyBRq0lBBzedI2d1aDt6ESBGN3hNrFzmLeE"
 
 wrapper = TextWrapper(width=100)
 
@@ -44,7 +49,7 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((client_ip,client_port))
 client_socket.send("TESTER".encode())
 
-llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyA6EkQPKKMlBVnPyD51-jEZmamHnu_l_jA")
+llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key=api_key)
 tester_agent = Agent(role="Software Tester",goal="Test the code for any errors, generate the corrected code and test cases for it",backstory="You are a code tester who hates incorrect code and love an error free code so you always correct the code", llm=llm, verbose=True, allow_delegation=True, max_rpm=20)
 
 description_entry = CTkEntry(master=user_frame, placeholder_text="Send the code for generating test cases", width=800, border_color='white', text_color='white')
@@ -98,7 +103,6 @@ def responseOnReceivingMessage(content):
 
 def receiveMessages():
     global server_row, file_name, tester_agent
-    print("Receiving messages")
 
     while(True):
         try:
@@ -182,8 +186,6 @@ def receiveMessages():
                 server_row += 10 + height
                 
                 responseOnReceivingMessage(content)
-
-            
         
         except ConnectionResetError as c:
             print(c)            
@@ -226,8 +228,8 @@ def getDescription():
 
     response(description=description)
 
-def uploadFiles():
-    global row, context, file_name
+def uploadFilesToAssistant():
+    global server_row, context, file_name
     file_path = filedialog.askopenfilename()
 
     
@@ -240,6 +242,31 @@ def uploadFiles():
 
         text = "You uploaded a file: ",file_path
         text_message = CTkTextbox(master=chat_frame, height=10)
+        text_message.insert(index=END, text=text)
+        text_message.configure(state="disabled")
+        text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
+
+        server_row += 12
+        
+        print(context)
+
+    except Exception as e:
+        print("An error occurred ",e)
+
+def uploadFilesToServer():
+    global row, context, file_name
+    file_path = filedialog.askopenfilename()
+
+    
+    index = file_path.rindex("/")+1
+    file_name = file_path[index:]
+
+    try:
+        with open(file_path) as file:
+            context = file.read()
+
+        text = "You uploaded a file: ",file_path
+        text_message = CTkTextbox(master=chat_frame_2, height=10)
         text_message.insert(index=END, text=text)
         text_message.configure(state="disabled")
         text_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
@@ -292,7 +319,7 @@ def sendData():
     file_name = ""
     
 
-upload_button = CTkButton(master=user_frame_2, text="+",command=uploadFiles, width=50, hover=True)
+upload_button = CTkButton(master=user_frame_2, text="+",command=uploadFilesToServer, width=50, hover=True)
 upload_button.grid(row=0, column=8, columnspan=5, padx=20, pady=30, sticky=NE)
 
 send_button = CTkButton(master=user_frame, text="Send",command=getDescription, width=50, hover=True)

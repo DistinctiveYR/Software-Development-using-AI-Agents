@@ -5,6 +5,11 @@ import customtkinter
 from customtkinter import *
 import time 
 from textwrap import *
+from dotenv import load_dotenv
+
+load_dotenv()
+
+api_key = "AIzaSyBRq0lBBzedI2d1aDt6ESBGN3hNrFzmLeE"
 
 root = CTk()
 root.geometry("1650x500")
@@ -27,7 +32,7 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((client_ip,client_port))
 client_socket.send("MANAGER".encode())
 
-llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyBm3QEhmxzvyl9Q2IruZAZzxs7CB9bGXAI")
+llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key=api_key)
 
 chat_frame = CTkScrollableFrame(master=root,width=1400, height=250)
 chat_frame.pack(pady=30)
@@ -107,7 +112,7 @@ def getDescription():
     
     width, height = textboxDimensions(text=description)
     
-    text_message = CTkTextbox(master=chat_frame, width=width, height=height, font=font)
+    text_message = CTkTextbox(master=chat_frame, width=width, height=+50, font=font)
     text_message.insert(index=END, text=description)
     text_message.configure(state="disabled")
     text_message.grid(row=row, column=0, columnspan=3, padx=20, pady=30, sticky=NSEW)
@@ -138,7 +143,7 @@ def sendDataToTester():
 
         width, height = textboxDimensions(text=message)
         
-        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font)
+        text_message = CTkTextbox(master=chat_frame_2, width=width, height=+50, font=font)
         text_message.insert(index=END, text=shown_message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
@@ -186,7 +191,7 @@ def sendDataToDeveloper():
         width, height = textboxDimensions(message)
 
         
-        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font, activate_scrollbars=False)
+        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height+50, font=font, activate_scrollbars=False)
         text_message.insert(index=END, text=shown_message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)

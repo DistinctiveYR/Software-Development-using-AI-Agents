@@ -53,7 +53,6 @@ def redirectMessages(client_socket):
             elif(len(received_message) == 5):
                 sender = received_message[0]
                 receiver = received_message[1]
-                print("receiver ", receiver)
                 file_name = received_message[2]
                 contents = received_message[3]
                 message = sender + ":" + file_name + ":" + contents + ":" + received_message[4]
@@ -77,7 +76,6 @@ def redirectMessages(client_socket):
             for name, socket in clients.items():
                 if(client_socket == socket):
                     clients.pop(socket)
-                    print("Removed :",name)
                     break
             
             print(clients.keys())
@@ -88,7 +86,6 @@ def redirectMessages(client_socket):
             for name, socket in clients.items():
                 if(client_socket == socket):
                     clients.pop(socket)
-                    print("Removed :",name)
                     break
             
             print(clients.keys())
