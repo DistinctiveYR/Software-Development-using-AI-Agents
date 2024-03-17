@@ -49,14 +49,14 @@ def redirectMessages(client_socket):
                 
                 else:
                     print("Receiver does not exist")
-            
+                                
             elif(len(received_message) == 5):
-                sender = message[0]
-                receiver = message[1]
+                sender = received_message[0]
+                receiver = received_message[1]
                 print("receiver ", receiver)
-                file_name = message[2]
-                contents = message[3]
-                message = sender + ":" + file_name + ":" + contents + ":" + message[4]
+                file_name = received_message[2]
+                contents = received_message[3]
+                message = sender + ":" + file_name + ":" + contents + ":" + received_message[4]
 
                 if(receiver in clients.keys()):
                     for client_name in clients.keys():

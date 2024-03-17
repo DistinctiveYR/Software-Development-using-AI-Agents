@@ -38,11 +38,11 @@ chat_frame_2.pack(pady=30)
 user_frame_2 = CTkFrame(master=root, width=800, height=1)
 user_frame_2.pack()
 
-# client_ip = '127.0.0.1'
-# client_port = 999
-# client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# client_socket.connect((client_ip,client_port))
-# client_socket.send("TESTER".encode())
+client_ip = '127.0.0.1'
+client_port = 999
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect((client_ip,client_port))
+client_socket.send("TESTER".encode())
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro",verbose=True,temperature=0.6,google_api_key="AIzaSyA6EkQPKKMlBVnPyD51-jEZmamHnu_l_jA")
 tester_agent = Agent(role="Software Tester",goal="Test the code for any errors, generate the corrected code and test cases for it",backstory="You are a code tester who hates incorrect code and love an error free code so you always correct the code", llm=llm, verbose=True, allow_delegation=True, max_rpm=20)
@@ -150,14 +150,14 @@ def receiveMessages():
 
                 server_row += 10 + height
 
-                responseOnReceivingMessage(content)                
+                responseOnReceivingMessage(content)            
 
             elif(len(received_message) == 4):
                 sender = received_message[0]
                 # receiver = received_message[1]
-                file_name = received_message[2]
-                content = received_message[3]
-                message = sender + " : " + file_name + " : " + received_message[4]
+                file_name = received_message[1]
+                content = received_message[2]
+                message = sender + " : " + file_name + " : " + received_message[3]
                 print(message)
                 
                 while(True):
@@ -264,24 +264,27 @@ def sendData():
             
         client_socket.send(message.encode())
 
+        width , height = textboxDimensions(text=shown_message)
         
-        text_message = CTkTextbox(master=chat_frame_2, width=(len(shown_message)*10), height=10)
+        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font)
         text_message.insert(index=END, text=shown_message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        server_row += 12
+        server_row += 12 + height
     
     elif(chat_entry.get() != ""):
         message = sender + ":" + receiver + ":" + chat_entry.get()
         client_socket.send(message.encode())
+
+        width , height = textboxDimensions(text=message)
         
-        text_message = CTkTextbox(master=chat_frame_2, width=(len(message)*10), height=10)
+        text_message = CTkTextbox(master=chat_frame_2, width=width, height=height, font=font)
         text_message.insert(index=END, text=message)
         text_message.configure(state="disabled")
         text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
 
-        server_row += 12
+        server_row += 12 + height
 
     else:
         print("Message cannot be empty !")

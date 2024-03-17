@@ -323,9 +323,9 @@ def receiveMessages():
             elif(len(received_message) == 4):
                 sender = received_message[0]
                 # receiver = received_message[1]
-                file_name = received_message[2]
-                content = received_message[3]
-                message = sender + " : " + file_name + " : " + received_message[4]
+                file_name = received_message[1]
+                content = received_message[2]
+                message = sender + " : " + file_name + " : " + received_message[3]
                 print(message)
                 
                 while(True):

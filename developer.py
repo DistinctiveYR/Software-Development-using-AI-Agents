@@ -99,7 +99,7 @@ def response(description):
         response_message.configure(state="disabled")
         response_message.grid(row=row, column=5, columnspan=3, padx=20, pady=30, sticky=NSEW)
 
-        row += 100 + width
+        row += 12 + height
 
         context = ""
 
@@ -118,7 +118,7 @@ def getDescription():
     text_message.configure(state="disabled")
     text_message.grid(row=row, column=70, columnspan=3, padx=20, pady=30, sticky=NSEW)
 
-    row += 100 + width
+    row += 12 + height
     
     language = combo_box.get()
 
@@ -126,6 +126,8 @@ def getDescription():
         description += " in " + language
 
     print("Description: \n",description)
+
+    response(description=description)
 
 def sendMessage():
     global file_name, context, sender, receiver, server_row
@@ -239,7 +241,7 @@ def receiveMessages():
 
                 width, height = textboxDimensions(text=message)
 
-                text_message = CTkTextbox(master=chat_frame2, width=width, height=height)
+                text_message = CTkTextbox(master=chat_frame2, width=width, height=height, font=font)
                 text_message.insert(index=END, text=message)
                 text_message.configure(state="disabled")
                 text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
@@ -269,7 +271,7 @@ def receiveMessages():
 
                 width, height = textboxDimensions(text=message)
 
-                text_message = CTkTextbox(master=chat_frame2, width=width, height=height)
+                text_message = CTkTextbox(master=chat_frame2, width=width, height=height, font=font)
                 text_message.insert(index=END, text=message)
                 text_message.configure(state="disabled")
                 text_message.grid(row=server_row, column=5, columnspan=3, padx=20, pady=30, sticky=NE)
