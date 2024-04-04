@@ -8,8 +8,7 @@ from textwrap import *
 from dotenv import load_dotenv
 
 load_dotenv()
-
-api_key = "AIzaSyBRq0lBBzedI2d1aDt6ESBGN3hNrFzmLeE"
+api_key = os.getenv('API_KEY')
 
 root = CTk()
 root.geometry("1650x500")
@@ -79,7 +78,7 @@ def response(description):
     global row
     # char_length = []
 
-    manager = Agent(role="Manager", max_rpm=20, goal="explain the project create plan for the software projects, suggest ideas on how the project should be executed in the most effecient way and in the minimum time", backstory="You are a manager of a software developer department and you are the best at explaning a project to others managing work and delegating work among your teammates based on their skills", allow_delegation=False, llm=llm)
+    manager = Agent(role="Manager", max_rpm=20, goal="explain the project create plan for the software projects, suggest ideas on how the project should be executed in the most effecient way and in the minimum time", backstory="You are a manager of a software developer department and you are the best at explaning a project to others", allow_delegation=False, llm=llm)
     manager_task = Task(description=description, agent=manager)
 
     try:

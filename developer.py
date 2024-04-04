@@ -9,8 +9,7 @@ import time
 from dotenv import load_dotenv
 
 load_dotenv()
-
-api_key = "AIzaSyBRq0lBBzedI2d1aDt6ESBGN3hNrFzmLeE"
+api_key = os.getenv('API_KEY')
 
 languages = ['None','Python','Java','MySQl','Javascript']
 row = 0
